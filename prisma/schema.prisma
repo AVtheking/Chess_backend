@@ -18,17 +18,20 @@ model User {
   username  String   @unique
   email     String   @unique
   password  String
+  verified  Boolean  @default(false)
   createdAt DateTime @default(now())
   updatedAt DateTime @updatedAt
 
+  @@index([email, username, id])
   @@map("users")
 }
 
 model Otp {
   id        String   @id @default(cuid())
-  otp       String
-  userId    String
+  otp       Int
+  email     String   @unique
   createdAt DateTime @default(now())
 
+  @@index([id, email])
   @@map("otps")
 }

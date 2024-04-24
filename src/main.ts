@@ -10,6 +10,7 @@ async function bootstrap() {
   registerGlobals(app);
   0;
   await app.listen(3000);
+  console.log('\x1b[33m \x1b[1m ');
 }
 export function registerGlobals(app: INestApplication) {
   app.useGlobalInterceptors(

@@ -6,6 +6,7 @@ import { AuthModule } from './auth/auth.module';
 import { RequestLoggingMiddleware } from './middleware/logger.middleware';
 import { PrismaService } from './prisma/prisma.service';
 import { UsersModule } from './users/user.module';
+import { OtpModule } from './otp/otp.module';
 
 @Module({
   imports: [
@@ -20,6 +21,7 @@ import { UsersModule } from './users/user.module';
         },
       },
     }),
+    OtpModule,
   ],
   controllers: [AppController],
   providers: [AppService, PrismaService, RequestLoggingMiddleware],

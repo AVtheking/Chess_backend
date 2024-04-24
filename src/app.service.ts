@@ -9,16 +9,20 @@ export class AppService {
     return 'Hello World!';
   }
 
-  sendMail(email: string, otp: number) {
+  sendMail(
+    email: string,
+    otp: number,
+    subject: string,
+    text: string,
+    html: string,
+  ) {
     console.log('Sending mail to: ', email);
     this.mailerService.sendMail({
       from: process.env.Email,
       to: email,
-      subject: 'Testing Nest MailerModule ✔',
-      text: 'Forget Your passowrd? No worries, we got you covered!',
-      html: `<b>Forget Your passowrd? No worries, we got you covered!</b>
-      <p>Here is your OTP: <b>'  ${otp} '</b></p>
-      `,
+      subject: subject,
+      text: text,
+      html: html,
     });
   }
 }
