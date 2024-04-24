@@ -1,4 +1,8 @@
-import { ClassSerializerInterceptor, INestApplication } from '@nestjs/common';
+import {
+  ClassSerializerInterceptor,
+  INestApplication,
+  ValidationPipe,
+} from '@nestjs/common';
 import { NestFactory, Reflector } from '@nestjs/core';
 import { AppModule } from './app.module';
 
@@ -7,6 +11,7 @@ async function bootstrap() {
     logger: ['error', 'warn', 'log', 'debug', 'verbose'],
   });
   app.setGlobalPrefix('api/v1');
+  app.useGlobalPipes(new ValidationPipe());
   registerGlobals(app);
   0;
   await app.listen(3000);

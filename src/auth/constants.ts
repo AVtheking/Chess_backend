@@ -4,3 +4,7 @@ export const jwtAccessSecret = {
 export const jwtRefreshSecret = {
   secret: process.env.JWT_REFRESH_SECRET,
 };
+
+export const jwtResetSecret = {
+  secret: process.env.JWT_RESET_SECRET,
+};

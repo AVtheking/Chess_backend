@@ -10,11 +10,12 @@ export class OtpService {
   ) {}
 
   async getOtp(email: string): Promise<Otp> {
-    const otp = await this.prisma.otp.findFirst({
+    const otp = await this.prisma.otp.findUnique({
       where: {
         email,
       },
     });
+
     return otp;
   }
   async deleteOtp(email: string) {
@@ -23,6 +24,13 @@ export class OtpService {
         email,
       },
     });
+  }
+  //checks if the otp is expired or not
+  async checkExpiration(otp: Otp): Promise<boolean> {
+    const currentTime = new Date();
+    const otpTime = otp?.createdAt;
+    const diff = currentTime.getTime() - otpTime.getTime();
+    return diff < 60000;
   }
   async generateOtp(email: string): Promise<number> {
     const otp = Math.floor(1000 + Math.random() * 9000);
@@ -48,7 +56,7 @@ export class OtpService {
         },
       });
     }
-    // this.appService.sendMail(email, otp);
+
     return otp;
   }
 }

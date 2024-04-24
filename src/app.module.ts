@@ -1,12 +1,15 @@
 import { MailerModule } from '@nestjs-modules/mailer';
-import { MiddlewareConsumer, Module, RequestMethod } from '@nestjs/common';
+import { Module } from '@nestjs/common';
+import { APP_INTERCEPTOR } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
+import { LoggingInterceptor } from './interceptors/app.interceptor';
 import { RequestLoggingMiddleware } from './middleware/logger.middleware';
+import { OtpModule } from './otp/otp.module';
 import { PrismaService } from './prisma/prisma.service';
 import { UsersModule } from './users/user.module';
-import { OtpModule } from './otp/otp.module';
+import { Utils } from './utils/send-mail';
 
 @Module({
   imports: [
@@ -24,12 +27,21 @@ import { OtpModule } from './otp/otp.module';
     OtpModule,
   ],
   controllers: [AppController],
-  providers: [AppService, PrismaService, RequestLoggingMiddleware],
+  providers: [
+    {
+      provide: APP_INTERCEPTOR,
+      useClass: LoggingInterceptor,
+    },
+    AppService,
+    PrismaService,
+    Utils,
+    RequestLoggingMiddleware,
+  ],
 })
 export class AppModule {
-  configure(consumer: MiddlewareConsumer) {
-    consumer
-      .apply(RequestLoggingMiddleware)
-      .forRoutes({ path: '*', method: RequestMethod.ALL });
-  }
+  // configure(consumer: MiddlewareConsumer) {
+  //   consumer
+  //     .apply(RequestLoggingMiddleware)
+  //     .forRoutes({ path: '*', method: RequestMethod.ALL });
+  // }
 }

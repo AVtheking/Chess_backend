@@ -3,7 +3,6 @@ import {
   HttpStatus,
   Injectable,
   NotFoundException,
-  UnauthorizedException,
 } from '@nestjs/common';
 import { User } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
@@ -11,10 +10,14 @@ import { Response } from 'express';
 import { LoginUserDto } from 'src/auth/dto/login-user.dto';
 import { CreateUserDto } from 'src/auth/dto/register-user.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
+import { Utils } from 'src/utils/send-mail';
 
 @Injectable()
 export class UsersService {
-  constructor(private prisma: PrismaService) {}
+  constructor(
+    private prisma: PrismaService,
+    private utils: Utils,
+  ) {}
 
   //return the user which matches the id
   async getUserById(id: string): Promise<User> {
@@ -24,10 +27,14 @@ export class UsersService {
       },
     });
   }
+  async hashPassword(password: string): Promise<string> {
+    const saltOrRounds = 10;
+    return await bcrypt.hash(password, saltOrRounds);
+  }
   async createUser(
     data: CreateUserDto,
     res: Response,
-  ): Promise<Response | User> {
+  ): Promise<User | Response> {
     const { username, email, password } = data;
 
     //checking if the username already taken
@@ -42,12 +49,14 @@ export class UsersService {
           ...data,
         });
       } else {
-        return res.status(HttpStatus.CONFLICT).json({
-          success: false,
-          message: 'Email already registered',
-        });
+        return this.utils.sendHttpResponse(
+          false,
+          HttpStatus.CONFLICT,
+          'Email already registered',
+          null,
+          res,
+        );
       }
-      // throw new ConflictException('Email already registered');
     } else {
       user = await this.prisma.user.findUnique({
         where: {
@@ -55,17 +64,19 @@ export class UsersService {
         },
       });
       if (user) {
-        return res.status(HttpStatus.CONFLICT).json({
-          success: false,
-          message: 'Username already taken',
-        });
+        return this.utils.sendHttpResponse(
+          false,
+          HttpStatus.CONFLICT,
+          'Username already taken',
+          null,
+          res,
+        );
       }
-      // checking if the email already taken
-      const saltOrRounds = 10;
-      const hashedPassword = await bcrypt.hash(password, saltOrRounds);
+
+      const hashedPassword = await this.hashPassword(password);
 
       //creating the user and storing it in db
-      await this.prisma.user.create({
+      return this.prisma.user.create({
         data: {
           username,
           email,
@@ -88,8 +99,32 @@ export class UsersService {
       },
     });
   }
+  async updateUserVerificationStatus(id: string): Promise<User> {
+    return await this.prisma.user.update({
+      where: {
+        id,
+      },
+      data: {
+        verified: true,
+      },
+    });
+  }
+  async updateUserPassword(id: string, password: string): Promise<User> {
+    const hashedPassword = await this.hashPassword(password);
+    return await this.prisma.user.update({
+      where: {
+        id,
+      },
+      data: {
+        password: hashedPassword,
+      },
+    });
+  }
 
-  async loginUser(userData: LoginUserDto): Promise<User> {
+  async loginUser(
+    userData: LoginUserDto,
+    res: Response,
+  ): Promise<User | Response> {
     const { email, password } = userData;
     const user = await this.prisma.user.findUnique({
       where: {
@@ -101,7 +136,14 @@ export class UsersService {
     }
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
-      throw new UnauthorizedException('Invalid password');
+      // throw new UnauthorizedException('Invalid password');
+      return this.utils.sendHttpResponse(
+        false,
+        HttpStatus.UNAUTHORIZED,
+        'Invalid password',
+        null,
+        res,
+      );
     }
     return user;
   }

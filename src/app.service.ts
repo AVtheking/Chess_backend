@@ -11,17 +11,17 @@ export class AppService {
 
   sendMail(
     email: string,
-    otp: number,
+
     subject: string,
-    text: string,
+
     html: string,
   ) {
-    console.log('Sending mail to: ', email);
+    console.log('\x1b[33mSending mail to: \x1b[1m', email);
     this.mailerService.sendMail({
       from: process.env.Email,
       to: email,
       subject: subject,
-      text: text,
+      // text: text,
       html: html,
     });
   }

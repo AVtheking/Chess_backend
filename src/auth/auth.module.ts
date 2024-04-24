@@ -4,6 +4,7 @@ import { AppService } from 'src/app.service';
 import { OtpService } from 'src/otp/otp.service';
 import { PrismaService } from 'src/prisma/prisma.service';
 import { UsersModule } from 'src/users/user.module';
+import { Utils } from 'src/utils/send-mail';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
 
@@ -11,7 +12,7 @@ import { AuthService } from './auth.service';
   imports: [UsersModule, JwtModule.register({})],
 
   controllers: [AuthController],
-  providers: [AuthService, OtpService, PrismaService, AppService],
+  providers: [AppService, AuthService, OtpService, PrismaService, Utils],
   exports: [AuthService],
 })
 export class AuthModule {}
