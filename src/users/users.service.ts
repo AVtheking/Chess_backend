@@ -1,8 +1,9 @@
 import {
   BadRequestException,
-  HttpStatus,
+  ConflictException,
   Injectable,
   NotFoundException,
+  UnauthorizedException,
 } from '@nestjs/common';
 import { User } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
@@ -10,14 +11,10 @@ import { Response } from 'express';
 import { LoginUserDto } from 'src/auth/dto/login-user.dto';
 import { CreateUserDto } from 'src/auth/dto/register-user.dto';
 import { PrismaService } from 'src/prisma/prisma.service';
-import { Utils } from 'src/utils/send-mail';
 
 @Injectable()
 export class UsersService {
-  constructor(
-    private prisma: PrismaService,
-    private utils: Utils,
-  ) {}
+  constructor(private prisma: PrismaService) {}
 
   //return the user which matches the id
   async getUserById(id: string): Promise<User> {
@@ -31,10 +28,7 @@ export class UsersService {
     const saltOrRounds = 10;
     return await bcrypt.hash(password, saltOrRounds);
   }
-  async createUser(
-    data: CreateUserDto,
-    res: Response,
-  ): Promise<User | Response> {
+  async createUser(data: CreateUserDto): Promise<User | Response> {
     const { username, email, password } = data;
 
     //checking if the username already taken
@@ -50,13 +44,7 @@ export class UsersService {
           ...data,
         });
       } else {
-        return this.utils.sendHttpResponse(
-          false,
-          HttpStatus.CONFLICT,
-          'Email already registered',
-          null,
-          res,
-        );
+        throw new ConflictException('Email already registered');
       }
     } else {
       user = await this.prisma.user.findUnique({
@@ -65,13 +53,7 @@ export class UsersService {
         },
       });
       if (user) {
-        return this.utils.sendHttpResponse(
-          false,
-          HttpStatus.CONFLICT,
-          'Username already taken',
-          null,
-          res,
-        );
+        throw new ConflictException('Username already taken');
       }
 
       const hashedPassword = await this.hashPassword(password);
@@ -122,10 +104,7 @@ export class UsersService {
     });
   }
 
-  async loginUser(
-    userData: LoginUserDto,
-    res: Response,
-  ): Promise<User | Response> {
+  async loginUser(userData: LoginUserDto): Promise<User | Response> {
     const { email, password } = userData;
     const user = await this.prisma.user.findUnique({
       where: {
@@ -137,14 +116,7 @@ export class UsersService {
     }
     const isPasswordValid = await bcrypt.compare(password, user.password);
     if (!isPasswordValid) {
-      // throw new UnauthorizedException('Invalid password');
-      return this.utils.sendHttpResponse(
-        false,
-        HttpStatus.UNAUTHORIZED,
-        'Invalid password',
-        null,
-        res,
-      );
+      throw new UnauthorizedException('Invalid password');
     }
     return user;
   }

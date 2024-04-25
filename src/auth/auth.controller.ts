@@ -21,6 +21,7 @@ import { ResetPasswordGuard } from './guards/reset-password.guard';
 @Controller('auth')
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
+
   @Post('SignUp')
   async SignUp(@Body() userData: CreateUserDto, @Res() res: Response) {
     return await this.authService.signUp(userData, res);

@@ -1,4 +1,9 @@
-import { HttpStatus, Injectable } from '@nestjs/common';
+import {
+  BadRequestException,
+  HttpStatus,
+  Injectable,
+  NotFoundException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { plainToInstance } from 'class-transformer';
 import { Response } from 'express';
@@ -53,8 +58,8 @@ export class AuthService {
    * @returns response
    */
   async signUp(signUp: CreateUserDto, res: Response): Promise<any> {
-    const user = await this.usersService.createUser(signUp, res);
-    console.log(user);
+    const user = await this.usersService.createUser(signUp);
+
     if (!('email' in user)) {
       return;
     }
@@ -86,34 +91,16 @@ export class AuthService {
 
     const OTP = await this.otpService.getOtp(email);
     if (!OTP) {
-      return this.utlis.sendHttpResponse(
-        false,
-        HttpStatus.BAD_REQUEST,
-        'OTP not found',
-        null,
-        res,
-      );
+      throw new BadRequestException('OTP not found');
     }
 
     if (!this.otpService.checkExpiration(OTP)) {
       this.otpService.deleteOtp(email);
 
-      return this.utlis.sendHttpResponse(
-        false,
-        HttpStatus.BAD_REQUEST,
-        'OTP expired',
-        null,
-        res,
-      );
+      throw new BadRequestException('OTP expired');
     }
     if (OTP.otp != otp) {
-      return this.utlis.sendHttpResponse(
-        false,
-        HttpStatus.BAD_REQUEST,
-        'Invalid OTP',
-        null,
-        res,
-      );
+      throw new BadRequestException('Invalid OTP');
     }
 
     //deleting the otp after being used
@@ -156,7 +143,7 @@ export class AuthService {
    * @returns user
    */
   async signIn(userData: LoginUserDto, res: Response): Promise<Response> {
-    const user = await this.usersService.loginUser(userData, res);
+    const user = await this.usersService.loginUser(userData);
     if (!('id' in user)) {
       return;
     }
@@ -195,13 +182,7 @@ export class AuthService {
 
     const user = await this.usersService.getUserByEmail(email);
     if (!user) {
-      return this.utlis.sendHttpResponse(
-        false,
-        HttpStatus.NOT_FOUND,
-        'User not found',
-        null,
-        res,
-      );
+      throw new NotFoundException('User not found');
     }
 
     //generating the otp and sending it to mail
@@ -231,23 +212,11 @@ export class AuthService {
     if (!this.otpService.checkExpiration(OTP)) {
       this.otpService.deleteOtp(email);
 
-      return this.utlis.sendHttpResponse(
-        false,
-        HttpStatus.BAD_REQUEST,
-        'OTP expired',
-        null,
-        res,
-      );
+      throw new BadRequestException('OTP expired');
     }
 
     if (OTP.otp != otp) {
-      return this.utlis.sendHttpResponse(
-        false,
-        HttpStatus.BAD_REQUEST,
-        'Invalid OTP',
-        null,
-        res,
-      );
+      throw new BadRequestException('Invalid OTP');
     }
 
     //deleting the otp after it is verified
@@ -283,13 +252,7 @@ export class AuthService {
     userId: string,
   ): Promise<Response> {
     if (!password) {
-      return this.utlis.sendHttpResponse(
-        false,
-        HttpStatus.BAD_REQUEST,
-        'Password is required',
-        null,
-        res,
-      );
+      throw new BadRequestException('Password is required');
     }
 
     const hashedPassword = await this.usersService.hashPassword(
@@ -313,7 +276,6 @@ export class AuthService {
    */
   //refreshes the access token of the user
   async refreshToken(res: Response, userId: string): Promise<Response> {
-    // const user = await this.usersService.getUserById(userId);
     const accessToken = await this.generateToken(
       userId,
       jwtAccessSecret.secret,

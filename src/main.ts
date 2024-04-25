@@ -5,13 +5,15 @@ import {
 } from '@nestjs/common';
 import { NestFactory, Reflector } from '@nestjs/core';
 import { AppModule } from './app.module';
+import { HttpExceptionFilter } from './http-exception.filter';
 
 async function bootstrap() {
   const app = await NestFactory.create(AppModule, {
     logger: ['error', 'warn', 'log', 'debug', 'verbose'],
   });
   app.setGlobalPrefix('api/v1');
-  app.useGlobalPipes(new ValidationPipe());
+  app.useGlobalPipes(new ValidationPipe({}));
+  app.useGlobalFilters(new HttpExceptionFilter());
   registerGlobals(app);
   0;
   await app.listen(3000);
