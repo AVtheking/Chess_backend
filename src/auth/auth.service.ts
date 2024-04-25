@@ -54,7 +54,7 @@ export class AuthService {
    */
   async signUp(signUp: CreateUserDto, res: Response): Promise<any> {
     const user = await this.usersService.createUser(signUp, res);
-
+    console.log(user);
     if (!('email' in user)) {
       return;
     }
@@ -134,6 +134,7 @@ export class AuthService {
       jwtRefreshSecret.secret,
       '10d',
     );
+
     const responseData = plainToInstance(ResponseUserDto, {
       ...user,
       accessToken,
@@ -154,10 +155,7 @@ export class AuthService {
    * @param userData
    * @returns user
    */
-  async signIn(
-    userData: LoginUserDto,
-    res: Response,
-  ): Promise<ResponseUserDto> {
+  async signIn(userData: LoginUserDto, res: Response): Promise<Response> {
     const user = await this.usersService.loginUser(userData, res);
     if (!('id' in user)) {
       return;
@@ -172,11 +170,18 @@ export class AuthService {
       jwtRefreshSecret.secret,
       '10d',
     );
-    return plainToInstance(ResponseUserDto, {
+    const responseData = plainToInstance(ResponseUserDto, {
       ...user,
       accessToken,
       refreshToken,
     });
+    return this.utlis.sendHttpResponse(
+      true,
+      HttpStatus.OK,
+      'User logged in',
+      responseData,
+      res,
+    );
   }
 
   /*
@@ -307,18 +312,15 @@ export class AuthService {
    * @returns user
    */
   //refreshes the access token of the user
-  async refreshToken(refreshToken: string, res: Response): Promise<Response> {
-    const { userId } = this.jwtService.verify(refreshToken, {
-      secret: jwtRefreshSecret.secret,
-    });
-    const user = await this.usersService.getUserById(userId);
-    const accessToken = this.generateToken(
+  async refreshToken(res: Response, userId: string): Promise<Response> {
+    // const user = await this.usersService.getUserById(userId);
+    const accessToken = await this.generateToken(
       userId,
       jwtAccessSecret.secret,
       '1h',
     );
+
     const responseData = plainToInstance(ResponseUserDto, {
-      ...user,
       accessToken,
     });
     return this.utlis.sendHttpResponse(

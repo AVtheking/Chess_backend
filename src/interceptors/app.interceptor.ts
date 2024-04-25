@@ -25,12 +25,11 @@ export class LoggingInterceptor implements NestInterceptor {
         const statusCode = response.statusCode;
         const elapsedTime = Date.now() - now;
         this.logger.log(
-          `\x1b[32m${method} ${url} ${statusCode} - ${elapsedTime}ms\x1b[1m`,
+          `\x1b[36m${method} ${url} ${statusCode} - ${elapsedTime}ms\x1b[1m`,
         );
       }),
       catchError((error) => {
         const status = error instanceof HttpException ? error.getStatus() : 500;
-        // const exceptionResponse = error.getResponse();
         const elapsedTime = Date.now() - now;
         // Log the exception details
         this.logger.error(`${method} ${url} ${status} - ${elapsedTime}ms`);

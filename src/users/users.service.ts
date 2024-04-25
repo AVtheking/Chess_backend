@@ -43,9 +43,10 @@ export class UsersService {
         email,
       },
     });
+
     if (user) {
       if (!user.verified) {
-        await this.updateUser(user.id, {
+        return await this.updateUser(user.id, {
           ...data,
         });
       } else {

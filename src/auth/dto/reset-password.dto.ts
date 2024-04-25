@@ -1,13 +1,6 @@
-import {
-  IsAlphanumeric,
-  IsDefined,
-  Matches,
-  MaxLength,
-  MinLength,
-} from 'class-validator';
+import { IsDefined, Matches, MaxLength, MinLength } from 'class-validator';
 
 export class ResetPasswordDto {
-  @IsAlphanumeric()
   @IsDefined()
   @MinLength(8)
   @MaxLength(20)
