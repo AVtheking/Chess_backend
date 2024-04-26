@@ -1,6 +1,12 @@
 import { Injectable } from '@nestjs/common';
 import { Response } from 'express';
 import { AppService } from 'src/app.service';
+import {
+  charsDigits,
+  charsLowercase,
+  charsSpecial,
+  charsUppercase,
+} from 'src/auth/constants';
 
 @Injectable()
 export class Utils {
@@ -45,5 +51,24 @@ export class Utils {
         ...data,
       },
     });
+  }
+  randomPassword() {
+    let password = '';
+    for (let i = 0; i < 8; i++) {
+      password += charsLowercase.charAt(
+        Math.floor(Math.random() * charsLowercase.length),
+      );
+      password += charsUppercase.charAt(
+        Math.floor(Math.random() * charsUppercase.length),
+      );
+      password += charsSpecial.charAt(
+        Math.floor(Math.random() * charsSpecial.length),
+      );
+      password += charsDigits.charAt(
+        Math.floor(Math.random() * charsDigits.length),
+      );
+    }
+
+    return password;
   }
 }

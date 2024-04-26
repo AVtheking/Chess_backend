@@ -30,7 +30,7 @@ export class UsersService {
   }
   async createUser(data: CreateUserDto): Promise<User | Response> {
     const { username, email, password } = data;
-
+    console.log(data);
     //checking if the username already taken
     let user = await this.prisma.user.findUnique({
       where: {
@@ -40,9 +40,7 @@ export class UsersService {
 
     if (user) {
       if (!user.verified) {
-        return await this.updateUser(user.id, {
-          ...data,
-        });
+        return await this.updateUser(user.id, { username, email });
       } else {
         throw new ConflictException('Email already registered');
       }
@@ -68,17 +66,14 @@ export class UsersService {
       });
     }
   }
-  async updateUser(id: string, data: CreateUserDto): Promise<User> {
-    const { username, email, password } = data;
 
+  async updateUser(id: string, data: any): Promise<User> {
     return await this.prisma.user.update({
       where: {
         id,
       },
       data: {
-        username,
-        email,
-        password,
+        ...data,
       },
     });
   }

@@ -1,4 +1,9 @@
-import { CanActivate, ExecutionContext, Logger } from '@nestjs/common';
+import {
+  CanActivate,
+  ExecutionContext,
+  Logger,
+  UnauthorizedException,
+} from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
 import { Request } from 'express';
 
@@ -14,7 +19,7 @@ export abstract class BaseGuard implements CanActivate {
     const start = Date.now(); // Start time
 
     const request = context.switchToHttp().getRequest();
-    const response = context.switchToHttp().getResponse();
+    // const response = context.switchToHttp().getResponse();
     const token = this.extractTokenFromHeader(request);
 
     if (token) {
@@ -29,28 +34,18 @@ export abstract class BaseGuard implements CanActivate {
         const elapsed = Date.now() - start; // Elapsed time in milliseconds
         this.logRequest(request, 401, elapsed); // Log the failed request
 
-        response.status(401).json({
-          success: false,
-          message: 'Invalid token',
-        });
-        return false;
+        throw new UnauthorizedException('Invalid token');
       }
     } else {
       const elapsed = Date.now() - start; // Elapsed time in milliseconds
       this.logRequest(request, 401, elapsed); // Log the failed request (token not found)
 
-      response.status(401).json({
-        success: false,
-        message: 'Token not found',
-      });
-      return false;
-      //   throw new UnauthorizedException('Token not found');
+      throw new UnauthorizedException('Token not found');
     }
   }
 
   private extractTokenFromHeader(request: Request): string | undefined {
     const [type, token] = request.headers.authorization?.split(' ') ?? [];
-    console.log(type, token);
     return type === 'Bearer' ? token : undefined;
   }
 

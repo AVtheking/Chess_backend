@@ -8,3 +8,7 @@ export const jwtRefreshSecret = {
 export const jwtResetSecret = {
   secret: process.env.JWT_RESET_SECRET,
 };
+export const charsLowercase = 'abcdefghijklmnopqrstuvwxyz';
+export const charsUppercase = 'ABCDEFGHIJKLMNOPQRSTUVWXYZ';
+export const charsSpecial = '!@#$%^&*()_+';
+export const charsDigits = '1234567890';

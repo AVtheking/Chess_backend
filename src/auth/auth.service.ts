@@ -5,11 +5,13 @@ import {
   NotFoundException,
 } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
+import { User } from '@prisma/client';
 import { plainToInstance } from 'class-transformer';
 import { Response } from 'express';
 import { OtpService } from 'src/otp/otp.service';
 import { UsersService } from 'src/users/users.service';
-import { Utils } from 'src/utils/send-mail';
+import { Utils } from 'src/utils/utils';
+import { generateFromEmail } from 'unique-username-generator';
 import { jwtAccessSecret, jwtRefreshSecret, jwtResetSecret } from './constants';
 import { ForgetPasswordDto } from './dto/forget-password.dto';
 import { LoginUserDto } from './dto/login-user.dto';
@@ -79,6 +81,71 @@ export class AuthService {
       res,
     );
   }
+  async googleSignIn(user: User, res: Response) {
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+    const userExists = await this.usersService.getUserByEmail(user.email);
+    const password = this.utlis.randomPassword();
+    if (!userExists) {
+      return await this.registerOauthUser(
+        {
+          email: user.email,
+          username: user.email,
+          password: password,
+        },
+        res,
+      );
+    }
+
+    const accesstoken = await this.generateToken(
+      user.id,
+      jwtAccessSecret.secret,
+      '1h',
+    );
+    const refreshToken = await this.generateToken(
+      user.id,
+      jwtRefreshSecret.secret,
+      '10d',
+    );
+    console.log('\x1b[32m', 'User logged in using google \x1b[0m');
+    return await this.utlis.sendHttpResponse(
+      true,
+      HttpStatus.OK,
+      'User logged in',
+      { accesstoken, refreshToken },
+      res,
+    );
+  }
+  async registerOauthUser(userData: CreateUserDto, res: Response) {
+    const newUser = await this.usersService.createUser(userData);
+    const user = newUser as User;
+
+    user.username = generateFromEmail(userData.email, 5);
+    user.verified = true;
+    await this.usersService.updateUser(user.id, {
+      username: user.username,
+      verified: user.verified,
+    });
+    const accessToken = await this.generateToken(
+      user.id,
+      jwtAccessSecret.secret,
+      '1h',
+    );
+    const refreshToken = await this.generateToken(
+      user.id,
+      jwtRefreshSecret.secret,
+      '10d',
+    );
+    return this.utlis.sendHttpResponse(
+      true,
+      HttpStatus.CREATED,
+      'User created successfully',
+      { accessToken, refreshToken },
+      res,
+    );
+  }
+
   /*
    * Verifies the email
    * @param email

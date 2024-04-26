@@ -15,6 +15,7 @@ import { CreateUserDto } from './dto/register-user.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { VerifyOtpDto } from './dto/verify-otp.dto';
 import { AuthGuard } from './guards/auth.guard';
+import { GoogleOauthGuard } from './guards/google-oauth.guard';
 import { RefreshTokenGuard } from './guards/refresh-token.guard';
 import { ResetPasswordGuard } from './guards/reset-password.guard';
 
@@ -66,5 +67,16 @@ export class AuthController {
   async RefreshToken(@Req() req: any, @Res() res: Response) {
     const userId = req.user;
     return await this.authService.refreshToken(res, userId);
+  }
+  @Get('google')
+  @UseGuards(GoogleOauthGuard)
+  async auth() {
+    // console.log(process.env.GOOGLE_CLIENT_CALLBACK_URL);
+  }
+
+  @Get('google/callback')
+  @UseGuards(GoogleOauthGuard)
+  async googleAuthCallBack(@Req() req, @Res() res: Response) {
+    return await this.authService.googleSignIn(req.user, res);
   }
 }
