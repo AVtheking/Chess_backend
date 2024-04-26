@@ -123,10 +123,12 @@ export class AuthService {
 
     user.username = generateFromEmail(userData.email, 5);
     user.verified = true;
+
     await this.usersService.updateUser(user.id, {
       username: user.username,
       verified: user.verified,
     });
+
     const accessToken = await this.generateToken(
       user.id,
       jwtAccessSecret.secret,
@@ -352,6 +354,7 @@ export class AuthService {
     const responseData = plainToInstance(ResponseUserDto, {
       accessToken,
     });
+
     return this.utlis.sendHttpResponse(
       true,
       HttpStatus.OK,

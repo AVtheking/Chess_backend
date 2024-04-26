@@ -4,9 +4,7 @@ import { APP_INTERCEPTOR } from '@nestjs/core';
 import { AppController } from './app.controller';
 import { AppService } from './app.service';
 import { AuthModule } from './auth/auth.module';
-import { GoogleStrategy } from './auth/strategy/google.strategy';
 import { LoggingInterceptor } from './interceptors/app.interceptor';
-import { RequestLoggingMiddleware } from './middleware/logger.middleware';
 import { OtpModule } from './otp/otp.module';
 import { PrismaService } from './prisma/prisma.service';
 import { UsersModule } from './users/user.module';
@@ -36,14 +34,6 @@ import { Utils } from './utils/utils';
     AppService,
     PrismaService,
     Utils,
-    RequestLoggingMiddleware,
-    GoogleStrategy,
   ],
 })
-export class AppModule {
-  // configure(consumer: MiddlewareConsumer) {
-  //   consumer
-  //     .apply(RequestLoggingMiddleware)
-  //     .forRoutes({ path: '*', method: RequestMethod.ALL });
-  // }
-}
+export class AppModule {}
