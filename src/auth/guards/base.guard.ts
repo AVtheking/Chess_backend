@@ -27,10 +27,12 @@ export abstract class BaseGuard implements CanActivate {
         const decodedToken = this.jwtService.verify(token, {
           secret: this.jwtSecret.secret,
         });
+        // console.log(decodedToken);
         request.user = decodedToken.userId;
 
         return true;
       } catch (error) {
+        // console.log(error);
         const elapsed = Date.now() - start; // Elapsed time in milliseconds
         this.logRequest(request, 401, elapsed); // Log the failed request
 

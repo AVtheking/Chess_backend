@@ -1,3 +1,4 @@
+import { HttpModule } from '@nestjs/axios';
 import { Module } from '@nestjs/common';
 import { JwtModule } from '@nestjs/jwt';
 import { AppService } from 'src/app.service';
@@ -7,10 +8,10 @@ import { UsersModule } from 'src/users/user.module';
 import { Utils } from 'src/utils/utils';
 import { AuthController } from './auth.controller';
 import { AuthService } from './auth.service';
-import { GoogleStrategy } from './strategy/google.strategy';
+// import { GoogleStrategy } from './strategy/google.strategy';
 
 @Module({
-  imports: [UsersModule, JwtModule.register({})],
+  imports: [UsersModule, JwtModule.register({}), HttpModule],
 
   controllers: [AuthController],
   providers: [
@@ -19,7 +20,8 @@ import { GoogleStrategy } from './strategy/google.strategy';
     OtpService,
     PrismaService,
     Utils,
-    GoogleStrategy,
+
+    // GoogleStrategy,
   ],
   exports: [AuthService],
 })

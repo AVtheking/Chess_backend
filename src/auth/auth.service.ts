@@ -1,3 +1,4 @@
+import { HttpService } from '@nestjs/axios';
 import {
   BadRequestException,
   HttpStatus,
@@ -11,22 +12,27 @@ import { Response } from 'express';
 import { OtpService } from 'src/otp/otp.service';
 import { UsersService } from 'src/users/users.service';
 import { Utils } from 'src/utils/utils';
-import { generateFromEmail } from 'unique-username-generator';
+import { generateUsername } from 'unique-username-generator';
 import { jwtAccessSecret, jwtRefreshSecret, jwtResetSecret } from './constants';
 import { ForgetPasswordDto } from './dto/forget-password.dto';
 import { LoginUserDto } from './dto/login-user.dto';
 import { CreateUserDto } from './dto/register-user.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
-import { ResponseUserDto } from './dto/response-user.dto';
+import { ResponseUserDto, UserDto } from './dto/response-user.dto';
 import { SignUpResponseDto } from './dto/signUp-respones.dto';
 import { VerifyOtpDto } from './dto/verify-otp.dto';
-
+interface googleUser {
+  username: string;
+  email: string;
+  id: string;
+}
 @Injectable()
 export class AuthService {
   constructor(
     private usersService: UsersService,
     private jwtService: JwtService,
     private otpService: OtpService,
+    private httpService: HttpService,
     private utlis: Utils,
   ) {}
 
@@ -78,72 +84,6 @@ export class AuthService {
       HttpStatus.CREATED,
       'User created successfully',
       responseData,
-      res,
-    );
-  }
-  async googleSignIn(user: User, res: Response) {
-    if (!user) {
-      throw new BadRequestException('User not found');
-    }
-    const userExists = await this.usersService.getUserByEmail(user.email);
-    const password = this.utlis.randomPassword();
-    if (!userExists) {
-      return await this.registerOauthUser(
-        {
-          email: user.email,
-          username: user.email,
-          password: password,
-        },
-        res,
-      );
-    }
-
-    const accesstoken = await this.generateToken(
-      user.id,
-      jwtAccessSecret.secret,
-      '1h',
-    );
-    const refreshToken = await this.generateToken(
-      user.id,
-      jwtRefreshSecret.secret,
-      '10d',
-    );
-    console.log('\x1b[32m', 'User logged in using google \x1b[0m');
-    return await this.utlis.sendHttpResponse(
-      true,
-      HttpStatus.OK,
-      'User logged in',
-      { accesstoken, refreshToken },
-      res,
-    );
-  }
-  async registerOauthUser(userData: CreateUserDto, res: Response) {
-    const newUser = await this.usersService.createUser(userData);
-    const user = newUser as User;
-
-    user.username = generateFromEmail(userData.email, 5);
-    user.verified = true;
-
-    await this.usersService.updateUser(user.id, {
-      username: user.username,
-      verified: user.verified,
-    });
-
-    const accessToken = await this.generateToken(
-      user.id,
-      jwtAccessSecret.secret,
-      '1h',
-    );
-    const refreshToken = await this.generateToken(
-      user.id,
-      jwtRefreshSecret.secret,
-      '10d',
-    );
-    return this.utlis.sendHttpResponse(
-      true,
-      HttpStatus.CREATED,
-      'User created successfully',
-      { accessToken, refreshToken },
       res,
     );
   }
@@ -359,6 +299,127 @@ export class AuthService {
       true,
       HttpStatus.OK,
       'Token refreshed',
+      responseData,
+      res,
+    );
+  }
+
+  /*
+   * Exchanges the token
+   * @param access_token
+   * @param res
+   * @returns user
+   */
+  async tokenExchange(access_token: string, res: Response) {
+    const response = await this.httpService.axiosRef.get(
+      `https://www.googleapis.com/oauth2/v3/userinfo?access_token=${access_token}`,
+    );
+    const data = response.data;
+
+    if (response.status === 200) {
+      const randomNumber = this.utlis.randomInteger(1000, 9999);
+      const user = {
+        username: `${data.given_name.toLowerCase()}.${data.family_name.toLowerCase()}${randomNumber}`,
+        email: data.email,
+        id: data.sub,
+      };
+
+      return await this.googleSignIn(user, res);
+    }
+  }
+
+  /*
+   * Signs in the user using google
+   * @param user
+   * @param res
+   * @returns response
+   */
+  async googleSignIn(user: googleUser, res: Response) {
+    if (!user) {
+      throw new BadRequestException('User not found');
+    }
+    const userExists = await this.usersService.getUserByEmail(user.email);
+    const password = this.utlis.randomPassword();
+    if (!userExists) {
+      return await this.registerOauthUser(
+        {
+          email: user.email,
+          username: user.username,
+          password: password,
+        },
+        res,
+      );
+    }
+
+    const accessToken = await this.generateToken(
+      user.id,
+      jwtAccessSecret.secret,
+      '1h',
+    );
+    const refreshToken = await this.generateToken(
+      user.id,
+      jwtRefreshSecret.secret,
+      '10d',
+    );
+
+    //exposing only necessary fields to the user
+    //exluding password field from the response
+    const userData = plainToInstance(UserDto, {
+      ...userExists,
+    });
+    const responseData = plainToInstance(ResponseUserDto, {
+      user: userData,
+      accessToken,
+      refreshToken,
+    });
+    console.log('\x1b[32m', 'User logged in using google \x1b[0m');
+    return await this.utlis.sendHttpResponse(
+      true,
+      HttpStatus.OK,
+      'User logged in',
+      responseData,
+      res,
+    );
+  }
+
+  /*
+   * Registers the user
+   * @param userData
+   * @param res
+   * @returns response
+   */
+
+  async registerOauthUser(userData: CreateUserDto, res: Response) {
+    const newUser = await this.usersService.createUser(userData);
+    const user = newUser as User;
+    console.log(user);
+    user.username = generateUsername(userData.username);
+    user.verified = true;
+
+    await this.usersService.updateUser(user.id, {
+      username: user.username,
+      verified: user.verified,
+    });
+
+    const accessToken = await this.generateToken(
+      user.id,
+      jwtAccessSecret.secret,
+      '1h',
+    );
+    const refreshToken = await this.generateToken(
+      user.id,
+      jwtRefreshSecret.secret,
+      '10d',
+    );
+    const responseData = plainToInstance(ResponseUserDto, {
+      user: { ...user },
+      accessToken,
+      refreshToken,
+    });
+    return this.utlis.sendHttpResponse(
+      true,
+      HttpStatus.CREATED,
+      'User created successfully',
       responseData,
       res,
     );

@@ -21,7 +21,6 @@ export class AppService {
       from: process.env.Email,
       to: email,
       subject: subject,
-      // text: text,
       html: html,
     });
   }

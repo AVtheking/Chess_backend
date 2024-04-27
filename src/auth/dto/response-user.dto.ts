@@ -1,6 +1,5 @@
 import { Exclude, Expose } from 'class-transformer';
-
-export class ResponseUserDto {
+export class UserDto {
   @Expose()
   username: string;
 
@@ -18,6 +17,11 @@ export class ResponseUserDto {
 
   @Expose()
   updatedAt: Date;
+}
+
+export class ResponseUserDto {
+  @Expose()
+  user: UserDto;
   @Expose()
   accessToken: string;
 

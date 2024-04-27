@@ -15,7 +15,6 @@ import { CreateUserDto } from './dto/register-user.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { VerifyOtpDto } from './dto/verify-otp.dto';
 import { AuthGuard } from './guards/auth.guard';
-import { GoogleOauthGuard } from './guards/google-oauth.guard';
 import { RefreshTokenGuard } from './guards/refresh-token.guard';
 import { ResetPasswordGuard } from './guards/reset-password.guard';
 
@@ -23,7 +22,7 @@ import { ResetPasswordGuard } from './guards/reset-password.guard';
 export class AuthController {
   constructor(private readonly authService: AuthService) {}
 
-  @Post('SignUp')
+  @Post('signUp')
   async SignUp(@Body() userData: CreateUserDto, @Res() res: Response) {
     return await this.authService.signUp(userData, res);
   }
@@ -32,7 +31,7 @@ export class AuthController {
     return await this.authService.verifyEmail(data, res);
   }
 
-  @Post('SignIn')
+  @Post('signIn')
   async SignIn(@Body() userData: LoginUserDto, @Res() res: Response) {
     return await this.authService.signIn(userData, res);
   }
@@ -64,19 +63,16 @@ export class AuthController {
   }
   @UseGuards(RefreshTokenGuard)
   @Post('refreshToken')
-  async RefreshToken(@Req() req: any, @Res() res: Response) {
+  async refreshToken(@Req() req: any, @Res() res: Response) {
     const userId = req.user;
     return await this.authService.refreshToken(res, userId);
   }
-  @Get('google')
-  @UseGuards(GoogleOauthGuard)
-  async auth() {
-    // console.log(process.env.GOOGLE_CLIENT_CALLBACK_URL);
-  }
 
-  @Get('google/callback')
-  @UseGuards(GoogleOauthGuard)
-  async googleAuthCallBack(@Req() req, @Res() res: Response) {
-    return await this.authService.googleSignIn(req.user, res);
+  @Post('exchange')
+  async googeleTokenExchange(
+    @Body('access_token') access_token: string,
+    @Res() res,
+  ) {
+    return await this.authService.tokenExchange(access_token, res);
   }
 }

@@ -30,7 +30,7 @@ export class UsersService {
   }
   async createUser(data: CreateUserDto): Promise<User | Response> {
     const { username, email, password } = data;
-    console.log(data);
+
     //checking if the username already taken
     let user = await this.prisma.user.findUnique({
       where: {
