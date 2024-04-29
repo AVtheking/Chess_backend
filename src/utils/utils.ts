@@ -1,42 +1,19 @@
 import { Injectable } from '@nestjs/common';
+import { User } from '@prisma/client';
+import { plainToInstance } from 'class-transformer';
 import { Response } from 'express';
-import { AppService } from 'src/app.service';
 import {
   charsDigits,
   charsLowercase,
   charsSpecial,
   charsUppercase,
 } from 'src/auth/constants';
+import { UserDto } from 'src/auth/dto/response-user.dto';
 
 @Injectable()
 export class Utils {
-  constructor(private readonly appService: AppService) {}
-  async sendEmailVerificationMail(email: string, otp: number) {
-    const emailSubject = 'Email Verification OTP';
-    const html = `
-          <div style="font-family: Arial, sans-serif; max-width: 600px; margin: 20px auto; padding: 20px; background-color: #f4f4f4; border-radius: 5px;">
-              <h2 style="color: #333;">Email Verification OTP</h2>
-              <p>Please use the following OTP to verify your email:</p>
-              <div style="font-size: 24px; font-weight: bold; color: #007bff;">${otp}</div>
-              <p>If you didn't request this OTP, please ignore this email.</p>
-              <p>Thank you!</p>
-          </div>
-      `;
+  constructor() {}
 
-    this.appService.sendMail(email, emailSubject, html);
-  }
-  async sendForgetPasswordMail(email: string, otp: number) {
-    const emailSubject = 'Reset Password Request';
-
-    const html = `
-        <p><b>Request to reset password is requested on this registered email.</b></p>
-        <p>If it is not you, please ignore this and do not share OTP with anyone.</p>
-        <div style="margin-top: 20px; text-align: center; font-size: 24px; color: blue;">
-          <b>Your OTP:</b> ${otp}
-        </div>
-      `;
-    this.appService.sendMail(email, emailSubject, html);
-  }
   async sendHttpResponse(
     success: boolean,
     statusCode: number,
@@ -71,9 +48,15 @@ export class Utils {
 
     return password;
   }
-  randomInteger(min: number, max: number) {
+  randomInteger(min: number, max: number): number {
     min = Math.ceil(min);
     max = Math.floor(max);
     return Math.floor(Math.random() * (max - min + 1)) + min;
+  }
+  userResponse(user: User): UserDto {
+    const userResponse = plainToInstance(UserDto, {
+      ...user,
+    });
+    return userResponse;
   }
 }
