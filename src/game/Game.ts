@@ -17,26 +17,10 @@ export class Game {
 
   async addSecondPlayer(player2UserId: string) {
     this.player2UserId = player2UserId;
-    console.log(this.player2UserId);
 
     return await this.createGameInDb();
   }
   async createGameInDb() {
-    console.log(`This is the player 1 id: ${this.player1UserId} `);
-    console.log(`This is the player 2 id: ${this.player2UserId} `);
-
-    const user1 = await this.prismaService.user.findUnique({
-      where: {
-        id: this.player1UserId,
-      },
-    });
-    const user2 = await this.prismaService.user.findUnique({
-      where: {
-        id: this.player2UserId,
-      },
-    });
-    console.log(`This is the user 1: ${user1} `);
-    console.log(`This is the user 2: ${user2} `);
     const game = await this.prismaService.game.create({
       data: {
         id: this.gameId,
@@ -59,30 +43,33 @@ export class Game {
     });
 
     this.gameId = game.id;
-    this.prismaService.user.update({
-      where: {
-        id: this.player1UserId,
-      },
-      data: {
-        gameAsWhite: {
-          connect: {
-            id: this.gameId,
+    this.prismaService.$transaction([
+      this.prismaService.user.update({
+        where: {
+          id: this.player1UserId,
+        },
+        data: {
+          gameAsWhite: {
+            connect: {
+              id: this.gameId,
+            },
           },
         },
-      },
-    });
-    this.prismaService.user.update({
-      where: {
-        id: this.player2UserId,
-      },
-      data: {
-        gameAsBlack: {
-          connect: {
-            id: this.gameId,
+      }),
+      this.prismaService.user.update({
+        where: {
+          id: this.player2UserId,
+        },
+        data: {
+          gameAsBlack: {
+            connect: {
+              id: this.gameId,
+            },
           },
         },
-      },
-    });
+      }),
+    ]);
+
     return game;
   }
 }

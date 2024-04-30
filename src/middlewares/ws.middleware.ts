@@ -13,19 +13,19 @@ export const SocketAuthMiddleware = (
       const authorization = client.handshake.headers.authorization;
       if (!authorization) {
         next(new WsException('Unauthorized'));
-        client.emit('auth_error', { code: 401, message: 'No token found' });
-        client.disconnect(true); // Disconnect the client
+        // client.emit('auth_error', { code: 401, message: 'No token found' });
+        // client.disconnect(true); // Disconnect the client
         return;
       }
       const token: string = authorization.split(' ')[1];
       const user = jwtService.verify(token, {
         secret: process.env.JWT_ACCESS_SECRET,
       });
-      console.log(user);
+      // console.log(user);
       if (!user) {
         next(new WsException('Unauthorized'));
-        client.emit('auth_error', { code: 401, message: 'Unauthorized' });
-        client.disconnect(true); // Disconnect the client
+        // client.emit('auth_error', { code: 401, message: 'Unauthorized' });
+        // client.disconnect(true); // Disconnect the client
         return;
       }
       client = Object.assign(client, { user });
@@ -35,11 +35,11 @@ export const SocketAuthMiddleware = (
 
       console.error('SocketAuthMiddleware Error:', error);
 
-      client.emit('server_error', {
-        code: 500,
-        message: 'Internal Server Error',
-      });
-      client.disconnect(true); // Disconnect the client
+      // client.emit('server_error', {
+      //   code: 500,
+      //   message: 'Internal Server Error',
+      // });
+      // client.disconnect(true); // Disconnect the client
       return;
     }
   };

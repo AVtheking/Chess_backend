@@ -11,7 +11,7 @@ import {
   WsResponse,
 } from '@nestjs/websockets';
 
-import { UseFilters, UsePipes, ValidationPipe } from '@nestjs/common';
+import { Logger, UseFilters, UsePipes, ValidationPipe } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
 import { SocketAuthMiddleware } from 'src/middlewares/ws.middleware';
 import { PrismaService } from 'src/prisma/prisma.service';
@@ -26,6 +26,7 @@ export class gameGateWay
   implements OnGatewayConnection, OnGatewayDisconnect, OnGatewayInit
 {
   public games: Game[] = [];
+  private readonly logger = new Logger('WS');
   constructor(
     private readonly gameService: GameService,
     private jwtService: JwtService,
@@ -40,12 +41,12 @@ export class gameGateWay
     console.log('init');
   }
   // }
-  handleConnection() {
-    console.log('connected');
+  handleConnection(@ConnectedSocket() client: Socket) {
+    this.logger.log(`\x1b[34mClient connected: ${client.id}\x1b[1m`);
   }
 
-  handleDisconnect() {
-    console.log('disconnected');
+  handleDisconnect(@ConnectedSocket() client: Socket) {
+    this.logger.log(`\x1b[34mClient disconnected: ${client.id}\x1b[1m`);
   }
 
   @SubscribeMessage('createGame')
@@ -53,28 +54,40 @@ export class gameGateWay
     const user = socket.user;
 
     const game = new Game(this.prismaService, user.userId);
+
     this.games.push(game);
 
+    //joining socket to game room
+    socket.join(game.gameId);
+
     const event = 'gamecreated';
+
+    this.logger.log(`\x1b[34mGame created: ${game.gameId}\x1b[1m`);
     return { event, data: game.gameId };
   }
+
+  /*
+   * handleGameJoin
+   * This method is used to join a game
+   * @param data - gameId
+   * @param socket - socket instance
+   * @returns WsResponse<unknown>
+   */
 
   @SubscribeMessage('joinGame')
   async handleGameJoin(
     @MessageBody() data: any,
     @ConnectedSocket() socket: any,
   ): Promise<WsResponse<unknown>> {
-    // console.log(socket.user);
-
     const gameId = data.gameId;
     const games = this.games;
 
-    // console.log(data.gameId);
     const game = games.find((g) => g.gameId === gameId);
-    // console.log(`game found: ${game}`);
+
     if (game === undefined) {
       return { event: 'error', data: 'game not found' };
     }
+
     const gameInDb = await this.prismaService.game.findUnique({
       where: { id: data.gameId },
     });
@@ -82,13 +95,17 @@ export class gameGateWay
       this.server.emit('error', 'you cannot join your own game');
       return;
     }
-    // console.log(`this is the game in db ${gameInDb}`);
+
     if (gameInDb) {
       this.server.to(socket.id).emit('error', 'game already started');
       return;
     }
+    //joining socket to game room
+    socket.join(gameId);
+
     game.addSecondPlayer(socket.user.userId);
 
-    this.server.send('gamejoined', 'game joined');
+    //sending game joined event to all clients in the game room
+    this.server.to(gameId).emit('gamejoined', 'game joined');
   }
 }
