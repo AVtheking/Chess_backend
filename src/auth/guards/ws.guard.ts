@@ -1,6 +1,5 @@
 import { CanActivate, ExecutionContext } from '@nestjs/common';
 import { JwtService } from '@nestjs/jwt';
-import { WsException } from '@nestjs/websockets';
 import { Socket } from 'socket.io';
 
 export class WsGuard implements CanActivate {

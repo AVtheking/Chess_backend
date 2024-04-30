@@ -291,6 +291,7 @@ export class AuthService {
    */
 
   async refreshToken(res: Response, userId: string): Promise<Response> {
+    console.log(userId);
     const accessToken = await this.generateToken(
       userId,
       jwtAccessSecret.secret,
