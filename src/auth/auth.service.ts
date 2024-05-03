@@ -295,7 +295,7 @@ export class AuthService {
     const accessToken = await this.generateToken(
       userId,
       jwtAccessSecret.secret,
-      '1h',
+      '10d',
     );
 
     const responseData = plainToInstance(ResponseUserDto, {

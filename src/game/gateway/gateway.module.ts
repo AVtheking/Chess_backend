@@ -4,10 +4,10 @@ import { PrismaService } from 'src/prisma/prisma.service';
 import { UsersService } from 'src/users/users.service';
 import { Utils } from 'src/utils/utils';
 import { GameService } from '../game.service';
-import { gameGateWay } from './game.gateway';
+import { GameGateWay } from './game.gateway';
 
 @Module({
   imports: [JwtModule.register({})],
-  providers: [gameGateWay, GameService, PrismaService, UsersService, Utils],
+  providers: [GameGateWay, GameService, PrismaService, UsersService, Utils],
 })
 export class GatewayModule {}

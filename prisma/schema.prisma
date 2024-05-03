@@ -74,7 +74,7 @@ enum GameStatus {
 }
 
 enum GameResult {
-  WHITE_WINS
-  BLACK_WINS
+  WHITE_WON
+  BLACK_WON
   DRAW
 }
