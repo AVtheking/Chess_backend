@@ -4,10 +4,7 @@ import { PrismaService } from 'src/prisma/prisma.service';
 
 @Injectable()
 export class OtpService {
-  constructor(
-    private prisma: PrismaService,
-    // private readonly appService: AppService,
-  ) {}
+  constructor(private prisma: PrismaService) {}
 
   async getOtp(email: string): Promise<Otp> {
     const otp = await this.prisma.otp.findUnique({

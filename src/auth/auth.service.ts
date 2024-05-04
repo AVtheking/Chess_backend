@@ -361,12 +361,12 @@ export class AuthService {
     }
 
     const accessToken = await this.generateToken(
-      user.id,
+      userExists.id,
       jwtAccessSecret.secret,
-      '1h',
+      '10d',
     );
     const refreshToken = await this.generateToken(
-      user.id,
+      userExists.id,
       jwtRefreshSecret.secret,
       '10d',
     );
@@ -379,7 +379,7 @@ export class AuthService {
       accessToken,
       refreshToken,
     });
-    console.log('\x1b[32m', 'User logged in using google \x1b[0m');
+    console.log('\x1b[32m', 'User logged in using google \x1b[1m');
     return await this.utlis.sendHttpResponse(
       true,
       HttpStatus.OK,

@@ -8,7 +8,6 @@ import {
   SubscribeMessage,
   WebSocketGateway,
   WebSocketServer,
-  WsResponse,
 } from '@nestjs/websockets';
 
 import {
@@ -64,8 +63,8 @@ export class GameGateWay
    * @param socket - socket instance
    * @returns WsResponse<unknown>
    */
-  @SubscribeMessage('createGame')
-  handleGameCreate(@ConnectedSocket() socket: any): WsResponse<unknown> {
+  @SubscribeMessage('CREATE_GAME')
+  handleGameCreate(@ConnectedSocket() socket: any) {
     const user = socket.user;
 
     const game = new Game(
@@ -79,10 +78,10 @@ export class GameGateWay
     //joining socket to game room
     socket.join(game.gameId);
 
-    const event = 'gamecreated';
+    // const event = 'GAME_CREATED';
 
     this.logger.log(`\x1b[34mGame created: ${game.gameId}\x1b[1m`);
-    return { event, data: game.gameId };
+    this.server.to(socket.id).emit('GAME_CREATED', game.gameId);
   }
 
   /*
@@ -93,7 +92,7 @@ export class GameGateWay
    * @returns WsResponse<unknown>
    */
 
-  @SubscribeMessage('joinGame')
+  @SubscribeMessage('JOIN_GAME')
   async handleGameJoin(
     @MessageBody() data: any,
     @ConnectedSocket() socket: any,
@@ -126,7 +125,7 @@ export class GameGateWay
 
     game.addSecondPlayer(userId);
 
-    this.server.to(socket.id).emit('gamejoined', gameId);
+    this.server.to(socket.id).emit('GAME_JOINED', gameId);
 
     this.logger.log(`\x1b[34m Client ${userId} Game joined: ${gameId}\x1b[1m`);
 
@@ -157,31 +156,46 @@ export class GameGateWay
     );
     this.logger.log(`\x1b[34mGame started: ${gameId}\x1b[1m`);
   }
-  @SubscribeMessage('makeMove')
+
+  /*
+   * handle Make Move In Game
+   * This method is used to make a move in a game
+   * @param data - gameId and move
+   * @param socket - socket instance
+   * @returns void7
+   */
+  @SubscribeMessage('MAKE_MOVE')
   async makeMoveInGame(
     @MessageBody() data: any,
     @ConnectedSocket() socket: any,
   ) {
-    const { gameId, move } = data;
+    console.log(data);
+    const moveData = JSON.parse(data);
+    console.log(moveData.data);
+    const { gameId, from, to } = moveData.data;
+    console.log(gameId, from, to);
     const userId = socket.user.userId;
     const game = this.games.find((g) => g.gameId === gameId);
     if (game === undefined) {
       this.server.to(socket.id).emit('GAME_NOT_FOUND', 'game not found');
       return;
     }
-    const moveResult = game.makeMove(userId, move);
+
+    //making move in the game
+    const moveResult = game.makeMove(userId, from, to);
     if (moveResult) {
       this.server.to(gameId).emit(
         'MOVE',
         JSON.stringify({
           data: {
-            from: move.from,
-            to: move.to,
+            from: from,
+            to: to,
+            fen: game.board.fen(),
           },
         }),
       );
       this.logger.log(
-        `\x1b[34m User :${userId} made move : ${move}  in game: ${gameId}\x1b[1m`,
+        `\x1b[34m User :${userId} made move from : ${from}  to :${to} in game: ${gameId}\x1b[1m`,
       );
     }
     if (game.gameOver) {

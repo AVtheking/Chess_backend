@@ -1,12 +1,12 @@
 import { Logger } from '@nestjs/common';
-import { Chess, Move } from 'chess.js';
+import { Chess, Square } from 'chess.js';
 import { randomUUID } from 'crypto';
 import { PrismaService } from 'src/prisma/prisma.service';
 
 type GAME_RESULT = 'DRAW' | 'WHITE_WON' | 'BLACK_WON';
 type GAME_STATUS = 'IN_PROGRESS' | 'COMPLETED' | 'ABANDONED';
-function isPromoting(chess: Chess, move) {
-  const piece = chess.get(move.from);
+function isPromoting(chess: Chess, from: Square, to: Square) {
+  const piece = chess.get(from);
 
   if (piece?.type !== 'p') {
     return false;
@@ -16,14 +16,14 @@ function isPromoting(chess: Chess, move) {
     return false;
   }
 
-  if (!['1', '8'].some((it) => move.to.endsWith(it))) {
+  if (!['1', '8'].some((it) => to.endsWith(it))) {
     return false;
   }
 
   return chess
-    .moves({ square: move.from, verbose: true })
+    .moves({ square: from, verbose: true })
     .map((it) => it.to)
-    .includes(move.to);
+    .includes(to);
 }
 export class Game {
   gameId: string;
@@ -107,24 +107,29 @@ export class Game {
     //   }),
     // ]);
   }
-  async makeMove(userId: string, move: Move): Promise<boolean> {
-    if (this.board.turn() === 'w' && userId !== this.player1UserId) {
+  async makeMove(userId: string, from: Square, to: Square): Promise<boolean> {
+    try {
+      if (this.board.turn() === 'w' && userId !== this.player1UserId) {
+        return false;
+      }
+      if (this.board.turn() === 'b' && userId !== this.player2UserId) {
+        return false;
+      }
+      if (isPromoting(this.board, from, to)) {
+        this.board.move({
+          from: from,
+          to: to,
+          promotion: 'q',
+        });
+      } else {
+        this.board.move({
+          from: from,
+          to: to,
+        });
+      }
+    } catch (error) {
+      this.logger.log(error);
       return false;
-    }
-    if (this.board.turn() === 'b' && userId !== this.player2UserId) {
-      return false;
-    }
-    if (isPromoting(this.board, move)) {
-      this.board.move({
-        from: move.from,
-        to: move.to,
-        promotion: 'q',
-      });
-    } else {
-      this.board.move({
-        from: move.from,
-        to: move.to,
-      });
     }
 
     if (this.board.isGameOver()) {

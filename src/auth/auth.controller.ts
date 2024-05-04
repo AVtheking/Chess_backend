@@ -1,12 +1,4 @@
-import {
-  Body,
-  Controller,
-  Get,
-  Post,
-  Req,
-  Res,
-  UseGuards,
-} from '@nestjs/common';
+import { Body, Controller, Post, Req, Res, UseGuards } from '@nestjs/common';
 import { Response } from 'express';
 import { AuthService } from './auth.service';
 import { ForgetPasswordDto } from './dto/forget-password.dto';
@@ -14,7 +6,6 @@ import { LoginUserDto } from './dto/login-user.dto';
 import { CreateUserDto } from './dto/register-user.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
 import { VerifyOtpDto } from './dto/verify-otp.dto';
-import { AuthGuard } from './guards/auth.guard';
 import { RefreshTokenGuard } from './guards/refresh-token.guard';
 import { ResetPasswordGuard } from './guards/reset-password.guard';
 
@@ -55,12 +46,6 @@ export class AuthController {
     return await this.authService.changePassword(resetData, res, req.user);
   }
 
-  @UseGuards(AuthGuard)
-  @Get('profile')
-  async getProfile(@Req() req: any) {
-    console.log('User is authenticated');
-    return req.user;
-  }
   @UseGuards(RefreshTokenGuard)
   @Post('refreshToken')
   async refreshToken(@Req() req: any, @Res() res: Response) {
