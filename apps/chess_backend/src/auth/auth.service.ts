@@ -9,11 +9,12 @@ import { JwtService } from '@nestjs/jwt';
 import { User } from '@prisma/client';
 import { plainToInstance } from 'class-transformer';
 import { Response } from 'express';
-import { OtpService } from 'src/otp/otp.service';
-import { UsersService } from 'src/users/users.service';
-import { Mailer } from 'src/utils/Mailer';
-import { Utils } from 'src/utils/utils';
+
 import { generateUsername } from 'unique-username-generator';
+import { OtpService } from '../otp/otp.service';
+import { UsersService } from '../users/users.service';
+import { Mailer } from '../utils/Mailer';
+import { Utils } from '../utils/utils';
 import { jwtAccessSecret, jwtRefreshSecret, jwtResetSecret } from './constants';
 import { ForgetPasswordDto } from './dto/forget-password.dto';
 import { LoginUserDto } from './dto/login-user.dto';

@@ -1,8 +1,32 @@
 {
   "$schema": "https://json.schemastore.org/nest-cli",
   "collection": "@nestjs/schematics",
-  "sourceRoot": "src",
+  "sourceRoot": "apps/chess_backend/src",
   "compilerOptions": {
-    "deleteOutDir": true
+    "deleteOutDir": true,
+    "webpack": true,
+    "tsConfigPath": "apps/chess_backend/tsconfig.app.json"
+  },
+  "monorepo": true,
+  "root": "apps/chess_backend",
+  "projects": {
+    "chess_backend": {
+      "type": "application",
+      "root": "apps/chess_backend",
+      "entryFile": "main",
+      "sourceRoot": "apps/chess_backend/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/chess_backend/tsconfig.app.json"
+      }
+    },
+    "tounament": {
+      "type": "application",
+      "root": "apps/tounament",
+      "entryFile": "main",
+      "sourceRoot": "apps/tounament/src",
+      "compilerOptions": {
+        "tsConfigPath": "apps/tounament/tsconfig.app.json"
+      }
+    }
   }
 }

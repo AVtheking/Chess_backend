@@ -18,10 +18,11 @@ import {
   ValidationPipe,
 } from '@nestjs/common';
 import { Server, Socket } from 'socket.io';
-import { SocketAuthMiddleware } from 'src/middlewares/ws.middleware';
-import { PrismaService } from 'src/prisma/prisma.service';
-import { Game } from '../Game';
+
+import { Game } from './Game';
 import { WebsocketExceptionsFilter } from './filter';
+import { PrismaService } from '../prisma/prisma.service';
+import { SocketAuthMiddleware } from '../middlewares/ws.middleware';
 
 @Injectable()
 @WebSocketGateway()
@@ -78,8 +79,6 @@ export class GameGateWay
     //joining socket to game room
     socket.join(game.gameId);
 
-    // const event = 'GAME_CREATED';
-
     this.logger.log(`\x1b[34mGame created: ${game.gameId}\x1b[1m`);
     this.server.to(socket.id).emit('GAME_CREATED', game.gameId);
   }
@@ -111,6 +110,7 @@ export class GameGateWay
     const gameInDb = await this.prismaService.game.findUnique({
       where: { id: data.gameId },
     });
+
     if (game.player1UserId === userId) {
       this.server.to(socket.id).emit('error', 'you cannot join your own game');
       return;
@@ -136,7 +136,7 @@ export class GameGateWay
         },
       },
     });
-    // sending game joined event to all clients in the game room
+
     this.server.to(gameId).emit(
       'INIT_GAME',
       JSON.stringify({
@@ -169,12 +169,12 @@ export class GameGateWay
     @MessageBody() data: any,
     @ConnectedSocket() socket: any,
   ) {
-    console.log(data);
     const moveData = JSON.parse(data);
-    console.log(moveData.data);
+
     const { gameId, from, to } = moveData.data;
-    console.log(gameId, from, to);
+
     const userId = socket.user.userId;
+
     const game = this.games.find((g) => g.gameId === gameId);
     if (game === undefined) {
       this.server.to(socket.id).emit('GAME_NOT_FOUND', 'game not found');
@@ -198,6 +198,9 @@ export class GameGateWay
         `\x1b[34m User :${userId} made move from : ${from}  to :${to} in game: ${gameId}\x1b[1m`,
       );
     }
+    if (game.in_check) {
+      this.server.to(gameId).emit('CHECK', 'Check');
+    }
     if (game.gameOver) {
       this.server.to(gameId).emit(
         'GAME_OVER',
@@ -210,5 +213,20 @@ export class GameGateWay
       this.logger.log(`\x1b[34mGame Over: ${gameId}\x1b[1m`);
       this.removeGame(gameId);
     }
+  }
+  @SubscribeMessage('MESSAGE')
+  async sendMessage(@MessageBody() data: any, @ConnectedSocket() socket: any) {
+    const messageData = JSON.parse(data);
+
+    const { gameId, message } = messageData.data;
+    const usersId = socket.user.userId;
+    const game = this.games.find((g) => g.gameId === gameId);
+    if (game === undefined) {
+      this.server.to(socket.id).emit('GAME_NOT_FOUND', 'game not found');
+      return;
+    }
+    this.server
+      .to(gameId)
+      .emit('MESSAGE', JSON.stringify({ data: { message, userId: usersId } }));
   }
 }

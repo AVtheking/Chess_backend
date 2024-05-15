@@ -1,7 +1,7 @@
 import { Logger } from '@nestjs/common';
 import { Chess, Square } from 'chess.js';
 import { randomUUID } from 'crypto';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { PrismaService } from '../prisma/prisma.service';
 
 type GAME_RESULT = 'DRAW' | 'WHITE_WON' | 'BLACK_WON';
 type GAME_STATUS = 'IN_PROGRESS' | 'COMPLETED' | 'ABANDONED';
@@ -32,6 +32,7 @@ export class Game {
   board: Chess;
   gameOver: boolean;
   result: GAME_RESULT;
+  in_check: boolean;
   private readonly logger = new Logger('Game');
   constructor(
     private prismaService: PrismaService,
@@ -44,6 +45,7 @@ export class Game {
     this.gameId = randomUUID();
     this.board = new Chess();
     this.gameOver = false;
+    this.in_check = false;
   }
 
   async addSecondPlayer(player2UserId: string) {
@@ -132,6 +134,12 @@ export class Game {
       return false;
     }
 
+    //checking for check condition in chess
+    if (this.board.inCheck()) {
+      this.in_check = true;
+    } else {
+      this.in_check = false;
+    }
     if (this.board.isGameOver()) {
       this.gameOver = true;
       this.result = this.board.isDraw()

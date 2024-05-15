@@ -7,8 +7,8 @@ import {
   charsLowercase,
   charsSpecial,
   charsUppercase,
-} from 'src/auth/constants';
-import { UserDto } from 'src/auth/dto/response-user.dto';
+} from '../auth/constants';
+import { UserDto } from '../auth/dto/response-user.dto';
 
 @Injectable()
 export class Utils {

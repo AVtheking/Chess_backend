@@ -10,11 +10,11 @@ import { User } from '@prisma/client';
 import * as bcrypt from 'bcrypt';
 import { plainToInstance } from 'class-transformer';
 import { Response } from 'express';
-import { LoginUserDto } from 'src/auth/dto/login-user.dto';
-import { CreateUserDto } from 'src/auth/dto/register-user.dto';
-import { UserDto } from 'src/auth/dto/response-user.dto';
-import { PrismaService } from 'src/prisma/prisma.service';
-import { Utils } from 'src/utils/utils';
+import { LoginUserDto } from '../auth/dto/login-user.dto';
+import { CreateUserDto } from '../auth/dto/register-user.dto';
+import { UserDto } from '../auth/dto/response-user.dto';
+import { PrismaService } from '../prisma/prisma.service';
+import { Utils } from '../utils/utils';
 
 @Injectable()
 export class UsersService {
