@@ -9,23 +9,27 @@ import { JwtService } from '@nestjs/jwt';
 import { User } from '@prisma/client';
 import { plainToInstance } from 'class-transformer';
 import { Response } from 'express';
-import { OtpService } from 'src/otp/otp.service';
-import { UsersService } from 'src/users/users.service';
-import { Utils } from 'src/utils/utils';
+
 import { generateUsername } from 'unique-username-generator';
+import { OtpService } from '../otp/otp.service';
+import { UsersService } from '../users/users.service';
+import { Mailer } from '../utils/Mailer';
+import { Utils } from '../utils/utils';
 import { jwtAccessSecret, jwtRefreshSecret, jwtResetSecret } from './constants';
 import { ForgetPasswordDto } from './dto/forget-password.dto';
 import { LoginUserDto } from './dto/login-user.dto';
 import { CreateUserDto } from './dto/register-user.dto';
 import { ResetPasswordDto } from './dto/reset-password.dto';
-import { ResponseUserDto, UserDto } from './dto/response-user.dto';
+import { ResponseUserDto } from './dto/response-user.dto';
 import { SignUpResponseDto } from './dto/signUp-respones.dto';
 import { VerifyOtpDto } from './dto/verify-otp.dto';
+
 interface googleUser {
   username: string;
   email: string;
   id: string;
 }
+
 @Injectable()
 export class AuthService {
   constructor(
@@ -34,6 +38,7 @@ export class AuthService {
     private otpService: OtpService,
     private httpService: HttpService,
     private utlis: Utils,
+    private mailer: Mailer,
   ) {}
 
   /*
@@ -72,7 +77,7 @@ export class AuthService {
       return;
     }
     const otp = await this.otpService.generateOtp(signUp.email);
-    this.utlis.sendEmailVerificationMail(signUp.email, otp);
+    this.mailer.sendEmailVerificationMail(signUp.email, otp);
 
     const responseData = plainToInstance(SignUpResponseDto, {
       username: signUp.username,
@@ -130,9 +135,9 @@ export class AuthService {
       jwtRefreshSecret.secret,
       '10d',
     );
-
+    const userData = this.utlis.userResponse(user);
     const responseData = plainToInstance(ResponseUserDto, {
-      ...user,
+      user: userData,
       accessToken,
       refreshToken,
     });
@@ -166,8 +171,10 @@ export class AuthService {
       jwtRefreshSecret.secret,
       '10d',
     );
+    const userResponse = this.utlis.userResponse(user);
+
     const responseData = plainToInstance(ResponseUserDto, {
-      ...user,
+      user: userResponse,
       accessToken,
       refreshToken,
     });
@@ -196,7 +203,7 @@ export class AuthService {
 
     //generating the otp and sending it to mail
     const otp = await this.otpService.generateOtp(email);
-    this.utlis.sendForgetPasswordMail(email, otp);
+    this.mailer.sendForgetPasswordMail(email, otp);
 
     return this.utlis.sendHttpResponse(
       true,
@@ -279,16 +286,17 @@ export class AuthService {
   }
 
   /*
-   * Refreshes the token
+   * Refreshes the access token of the user
    * @param refreshToken
    * @returns user
    */
-  //refreshes the access token of the user
+
   async refreshToken(res: Response, userId: string): Promise<Response> {
+    console.log(userId);
     const accessToken = await this.generateToken(
       userId,
       jwtAccessSecret.secret,
-      '1h',
+      '10d',
     );
 
     const responseData = plainToInstance(ResponseUserDto, {
@@ -311,9 +319,11 @@ export class AuthService {
    * @returns user
    */
   async tokenExchange(access_token: string, res: Response) {
-    const response = await this.httpService.axiosRef.get(
-      `https://www.googleapis.com/oauth2/v3/userinfo?access_token=${access_token}`,
-    );
+    const url = `https://www.googleapis.com/oauth2/v3/userinfo?access_token=${access_token}`;
+
+    ///TODO: Add more error handling here
+    const response = await this.httpService.axiosRef.get(url);
+
     const data = response.data;
 
     if (response.status === 200) {
@@ -352,27 +362,25 @@ export class AuthService {
     }
 
     const accessToken = await this.generateToken(
-      user.id,
+      userExists.id,
       jwtAccessSecret.secret,
-      '1h',
+      '10d',
     );
     const refreshToken = await this.generateToken(
-      user.id,
+      userExists.id,
       jwtRefreshSecret.secret,
       '10d',
     );
 
     //exposing only necessary fields to the user
     //exluding password field from the response
-    const userData = plainToInstance(UserDto, {
-      ...userExists,
-    });
+    const userData = this.utlis.userResponse(userExists);
     const responseData = plainToInstance(ResponseUserDto, {
       user: userData,
       accessToken,
       refreshToken,
     });
-    console.log('\x1b[32m', 'User logged in using google \x1b[0m');
+    console.log('\x1b[32m', 'User logged in using google \x1b[1m');
     return await this.utlis.sendHttpResponse(
       true,
       HttpStatus.OK,
@@ -392,7 +400,7 @@ export class AuthService {
   async registerOauthUser(userData: CreateUserDto, res: Response) {
     const newUser = await this.usersService.createUser(userData);
     const user = newUser as User;
-    console.log(user);
+
     user.username = generateUsername(userData.username);
     user.verified = true;
 
@@ -411,8 +419,9 @@ export class AuthService {
       jwtRefreshSecret.secret,
       '10d',
     );
+    const userResponse = this.utlis.userResponse(user);
     const responseData = plainToInstance(ResponseUserDto, {
-      user: { ...user },
+      user: { userResponse },
       accessToken,
       refreshToken,
     });

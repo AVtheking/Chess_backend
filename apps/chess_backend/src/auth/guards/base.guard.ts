@@ -19,7 +19,7 @@ export abstract class BaseGuard implements CanActivate {
     const start = Date.now(); // Start time
 
     const request = context.switchToHttp().getRequest();
-    // const response = context.switchToHttp().getResponse();
+
     const token = this.extractTokenFromHeader(request);
 
     if (token) {
@@ -27,12 +27,11 @@ export abstract class BaseGuard implements CanActivate {
         const decodedToken = this.jwtService.verify(token, {
           secret: this.jwtSecret.secret,
         });
-        // console.log(decodedToken);
+
         request.user = decodedToken.userId;
 
         return true;
       } catch (error) {
-        // console.log(error);
         const elapsed = Date.now() - start; // Elapsed time in milliseconds
         this.logRequest(request, 401, elapsed); // Log the failed request
 

@@ -4,6 +4,7 @@ import {
   ValidationPipe,
 } from '@nestjs/common';
 import { NestFactory, Reflector } from '@nestjs/core';
+import { DocumentBuilder, SwaggerModule } from '@nestjs/swagger';
 import { AppModule } from './app.module';
 import { HttpExceptionFilter } from './http-exception.filter';
 
@@ -15,10 +16,19 @@ async function bootstrap() {
   app.useGlobalPipes(new ValidationPipe({}));
   app.useGlobalFilters(new HttpExceptionFilter());
   registerGlobals(app);
-  0;
+
+  const config = new DocumentBuilder()
+    .setTitle('Chess')
+    .setDescription('The Chess API')
+    .setVersion('1.0')
+    .addTag('Chess')
+    .build();
+  const document = SwaggerModule.createDocument(app, config);
+  SwaggerModule.setup('api', app, document);
   await app.listen(3000);
   console.log('\x1b[33m \x1b[1m ');
 }
+
 export function registerGlobals(app: INestApplication) {
   app.useGlobalInterceptors(
     new ClassSerializerInterceptor(app.get(Reflector), {

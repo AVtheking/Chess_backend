@@ -1,13 +1,11 @@
 import { Injectable } from '@nestjs/common';
 import { Otp } from '@prisma/client';
-import { PrismaService } from 'src/prisma/prisma.service';
+import { PrismaService } from '../prisma/prisma.service';
+
 
 @Injectable()
 export class OtpService {
-  constructor(
-    private prisma: PrismaService,
-    // private readonly appService: AppService,
-  ) {}
+  constructor(private prisma: PrismaService) {}
 
   async getOtp(email: string): Promise<Otp> {
     const otp = await this.prisma.otp.findUnique({
